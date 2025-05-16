@@ -1,0 +1,69 @@
+pipeline {
+    agant {
+        label "Agent-1"
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        ansiColor('xterm')
+    }
+
+    parameters {
+        choice(name: 'ACTION', choices: ['apply', 'destroy'], description: 'Select apprly or destory')
+    }
+
+    stages {
+        stage('terraform init & plan') {
+            steps {
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    sh """
+                        cd 00-vpc
+                        terraform init -reconfigure
+                        terraform plan -out=tfplan
+                    """
+                } 
+            }
+        }
+
+        stage('terraform apply') {
+            steps {
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    sh """
+                        cd 00-vpc
+                        if [ ${params.ACTION} == 'apply' ]
+                        then
+                            terraform apply -auto-approve --tfplan
+                        elif [ ${params.ACTION} == 'destroy' ]
+                        then
+                            terrform destroy -auto-approve
+                        fi
+                    """
+                }
+            }
+        }
+
+        stage('trigger SG'){
+            when {
+                expression { params.ACTION == 'apply' }
+            }
+            steps {
+                build job: '10-sg', parameters: [choice(name: 'ACTION', value: 'apply')], wait:true
+            }   
+        }
+    }
+
+    post {
+        always {
+            echo "This sections runs always"
+            deleteDir()
+        }
+        success {
+            echo "This section run when pipeline success"
+        }
+        failure {
+            echo "This section run when pipeline failes"
+        }
+    }
+
+}
