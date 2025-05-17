@@ -55,7 +55,7 @@ resource "aws_security_group_rule" "ingress_alb_on_https" {
   to_port           = 443
   protocol          = "tcp"
   cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = module.web_alb_sg.id
+  security_group_id = module.ingress_alb_sg.id
 }
 
 resource "aws_security_group_rule" "node_from_ingress_alb" {
@@ -136,7 +136,7 @@ resource "aws_security_group_rule" "ingress_alb_from_bastion" {
   to_port           = 443
   protocol          = "tcp"
   source_security_group_id = module.bastion_sg.id
-  security_group_id = module.app_alb_sg.id
+  security_group_id = module.ingress_alb_sg.id
 }
 
 

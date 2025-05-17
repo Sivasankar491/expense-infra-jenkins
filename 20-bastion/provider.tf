@@ -8,7 +8,7 @@ terraform {
 
   backend "s3" {
     bucket = "kotte-site"
-    key    = "expense-sg"
+    key    = "expense-bastion"
     region = "us-east-1"
     dynamodb_table = "kotte-site"
   }
